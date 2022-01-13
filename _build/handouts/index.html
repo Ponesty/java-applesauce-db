@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+      <meta charset="utf-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1" />
+      <title>Applesauce DB: Hands On With JDBC | Devmountain Foundations</title>
+
+      <link
+        href="_static/pygments.css"
+        rel="stylesheet"
+        type="text/css"
+      />
+      <link href="_static/devmountain.css" rel="stylesheet" type="text/css" />
+          <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+          <link rel="stylesheet" type="text/css" href="_static/devmountain.css" />
+          <link rel="stylesheet" type="text/css" href="_static/plot_directive.css" />
+          <link rel="stylesheet" type="text/css" href="_static/graphviz.css" />
+
+      <script src="_static/pdfobject.min.js"></script>
+      
+  </head>
+  <body>
+      <div id="handouts-container">
+        <header id="page-header">
+            <p id="project-title">Devmountain Foundations</p>
+            <p id="page-title">Applesauce DB: Hands On With JDBC</p>
+              <p id="backlink">
+                <a href="/"> &laquo; Back to Homepage </a>
+              </p>
+        </header>
+
+        <nav id="page-toc"><ul>
+<li><a class="reference internal" href="#">Applesauce DB: Hands On With JDBC</a><ul>
+<li><a class="reference internal" href="#introduction">Introduction</a><ul>
+<li><a class="reference internal" href="#but-first">But first…</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#part-1-database-setup">Part 1: Database Setup</a><ul>
+<li><a class="reference internal" href="#ensure-postgres-installation">Ensure Postgres Installation</a></li>
+<li><a class="reference internal" href="#set-up-the-database">Set Up the Database</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#step-2-java-maven-setup">Step 2: Java/Maven Setup</a><ul>
+<li><a class="reference internal" href="#ensure-maven-installation">Ensure Maven Installation</a></li>
+<li><a class="reference internal" href="#add-driver-dependency">Add Driver Dependency</a></li>
+<li><a class="reference internal" href="#update-postgres-connection-parameters">Update Postgres Connection Parameters</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#step-3-packaging-running-your-code-with-maven">Step 3: Packaging &amp; Running Your Code with Maven</a><ul>
+<li><a class="reference internal" href="#maven-clean">Maven Clean</a></li>
+<li><a class="reference internal" href="#maven-package">Maven Package</a></li>
+<li><a class="reference internal" href="#check-out-what-happened">Check out what happened</a></li>
+<li><a class="reference internal" href="#run-the-code">Run The Code</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#step-4-jdbc-code-review">Step 4: JDBC Code Review</a></li>
+<li><a class="reference internal" href="#step-5-expand-functionality">Step 5: Expand Functionality</a><ul>
+<li><a class="reference internal" href="#visit-the-docs">Visit the Docs</a></li>
+<li><a class="reference internal" href="#expand-jdbc-functionality">Expand JDBC functionality</a></li>
+<li><a class="reference internal" href="#create-cli-program">Create CLI program</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#further-study">Further Study</a></li>
+</ul>
+</li>
+</ul>
+</nav>
+
+        <main id="page-content">
+            <section class="section" id="applesauce-db-hands-on-with-jdbc">
+<h1>Applesauce DB: Hands On With JDBC</h1>
+<section class="section" id="introduction">
+<h2>Introduction</h2>
+<p>The goal of this project is to create a text-based CLI program that reads user
+input and executes SQL commands to a Postgres/MySQL database using JDBC. This will
+allow you to familiarize yourself with the purpose of object relational mappers, or
+libraries of code that allow you to interact with a database from traditional
+programming languages like Java/Python/etc. as opposed to pure SQL.</p>
+<div class="admonition note">
+<p class="admonition-title">On the Support of IDEs</p>
+<div class="admonition-body docutils container">
+<p>Throughout this exercise, we’ll be running commands directly in the command line
+interface rather than utilizing built-in functionality within IntelliJ or another
+IDE. This is intentional– please follow the instructions exactly as you see them
+here. While there are alternative (perhaps slightly easier) ways of accomplishing
+these tasks within the IDE, we want you to get some experience running commands
+related to Maven, JDBC, and Java directly on the command line.</p>
+<p>Think of it like you’re eating your cognitive vegetables for the day. 🥦</p>
+</div>
+</div>
+<section class="section" id="but-first">
+<h3>But first…</h3>
+<p>Let’s review some ideas about the things you will use in this exercise so that
+you have some context for the different pieces of code you will be building
+today.</p>
+<p>First, the <strong>Java Database Connectivity, or JDBC</strong> is part of Java’s standard library.</p>
+<ul class="simple">
+<li><p>JDBC allows a Java program to connect to a database, execute queries, and view results.</p></li>
+<li><p>The queries themselves are written in SQL, so you need to know that first</p></li>
+<li><p>JDBC is “built-in” to the Java language, similar to how Collections (Array, Map, Set)
+are already present in Java</p></li>
+<li><p>The packages <cite>java.sql</cite> and <cite>javax.sql</cite> are JDBC (<cite>javax.sql</cite> is JDBC v2.0)</p></li>
+<li><p>You will see these being imported in your main file during this exercise</p></li>
+</ul>
+<p>But what <em>is</em> JDBC, you may be wondering. <strong>JDBC is just a bunch of interfaces.</strong>
+There’s no actual code that provides significant added functionality to your database.
+Java leaves the database “stuff” up to vendors of database systems (Postgres, MySQL, Oracle, etc.)</p>
+<p>Note that databases like PostgreSQL, MySQL, etc. are software applications entirely separate
+from your Java programs, not unlike Microsoft Word, Google Chrome, and Spotify. Even though they are
+separate from Java, they can be interacted with inside a running Java program with the help
+of JDBC.</p>
+<p>JDBC “Drivers” are implementations of the interfaces for different databases. There is a driver
+for Postgres, a driver for MySQL, and so forth. While JDBC is <strong>part</strong> of the Java language, the
+drivers for each database are <strong>not</strong> part of the Java language. The creators of OracleDB wrote
+their own code to implement JDBC, as did the creators of MySQL, Postgres, MariaDB, H2,
+Apache Derby, etc.</p>
+<div class="admonition note">
+<p class="admonition-title">The database driver is a dependency</p>
+<div class="admonition-body docutils container">
+<p>Whichever database application you use (we’ll be using Postgres of course), you’ll need the
+corresponding JDBC Driver to be able to successfully connect to that database. So, in this
+exercise, you will use Maven to manage the installing and successful building of your project
+with the dependency of the Postgres database driver.</p>
+</div>
+</div>
+</section>
+</section>
+<section class="section" id="part-1-database-setup">
+<h2>Part 1: Database Setup</h2>
+<section class="section" id="ensure-postgres-installation">
+<h3>Ensure Postgres Installation</h3>
+<p>First, ensure that you have successfully installed PostgreSQL on your development machine and
+verify that postgres is running on port 5432. You can do this by running the following
+command and checking for something that looks like the following output. Hit
+<cite>CTRL-D</cite> to exit from postgres.</p>
+<pre class="console literal-block">$ <span class="cmd">psql</span>
+psql (13.3)
+Type &quot;help&quot; for help.
+
+username=#</pre>
+<div class="admonition warning">
+<p class="admonition-title">STOP if you don’t have <cite>psql</cite> working</p>
+<div class="admonition-body docutils container">
+<p>If you didn’t complete the previous direction successfully, you will need to stop
+and ask for help to make sure this dependency is properly installed. DO NOT
+continue until you have successfully ran the <cite>psql</cite> command in your command
+line interface.</p>
+</div>
+</div>
+</section>
+<section class="section" id="set-up-the-database">
+<h3>Set Up the Database</h3>
+<p>Time to create the database that we will use for this exercise. Then, connect to
+the database.</p>
+<pre class="console literal-block">$ <span class="cmd">createdb applesauce</span>
+$ <span class="cmd">psql applesauce</span>
+psql (13.3)
+Type &quot;help&quot; for help.
+
+applesaucedb=#</pre>
+<p>While connected to the database, run the following SQL to create the table and data we
+will use for this exercise.</p>
+<div class="highlight-sql notranslate"><div class="highlight"><pre><span></span><span class="k">CREATE</span> <span class="k">TABLE</span> <span class="n">foods</span><span class="p">(</span> <span class="n">name</span> <span class="nb">VARCHAR</span><span class="p">(</span><span class="mi">255</span><span class="p">),</span> <span class="n">yummy</span> <span class="nb">INTEGER</span> <span class="p">);</span>
+
+<span class="k">INSERT</span> <span class="k">INTO</span> <span class="n">foods</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">yummy</span><span class="p">)</span>
+<span class="k">VALUES</span> <span class="p">(</span><span class="ss">&quot;spaghetti&quot;</span><span class="p">,</span> <span class="mi">6</span><span class="p">),</span> <span class="p">(</span><span class="ss">&quot;noodles&quot;</span><span class="p">,</span> <span class="mi">9</span><span class="p">),</span> <span class="p">(</span><span class="ss">&quot;beef tacos&quot;</span><span class="p">,</span><span class="mi">3</span><span class="p">),</span> <span class="p">(</span><span class="ss">&quot;potatoes&quot;</span><span class="p">,</span> <span class="mi">5</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>Verify that you have successfully added your data.</p>
+<pre class="console literal-block">applesaucedb=# <span class="cmd">SELECT * FROM foods;</span>
+    name    | yummy
+------------+-------
+ spaghetti  |     6
+ noodles    |     9
+ beef tacos |     3
+ potatoes   |     5
+(4 rows)</pre>
+</section>
+</section>
+<section class="section" id="step-2-java-maven-setup">
+<h2>Step 2: Java/Maven Setup</h2>
+<section class="section" id="ensure-maven-installation">
+<h3>Ensure Maven Installation</h3>
+<p>Note: This exercise assumes that you have Java properly installed on your machine.</p>
+<p>First, ensure that you have successfully installed Maven on your development machine.
+Run <code class="docutils literal notranslate"><span class="pre">mvn</span></code> on the command line as you see below. You should see the following output
+(or something that looks like that).</p>
+<pre class="console literal-block">$ <span class="cmd">mvn --version</span>
+Apache Maven 3.8.2 (ea98e05a04480131370aa0c110b8c54cf726c06f)
+Maven home: /opt/apache-maven-3.8.2
+Java version: 17, vendor: Homebrew, runtime: /opt/homebrew/Cellar/openjdk/16.0.2/libexec/openjdk.jdk/Contents/Home
+Default locale: en_US, platform encoding: UTF-8
+OS name: &quot;mac os x&quot;, version: &quot;11.4&quot;, arch: &quot;aarch64&quot;, family: &quot;mac&quot;</pre>
+<div class="admonition warning">
+<p class="admonition-title">STOP if you don’t have <cite>mvn</cite> working</p>
+<div class="admonition-body docutils container">
+<p>If you didn’t complete the previous direction successfully, you will need to stop
+and ask for help to make sure this dependency is properly installed. DO NOT
+continue until you have successfully ran the <cite>mvn</cite> command in your command
+line interface.</p>
+</div>
+</div>
+</section>
+<section class="section" id="add-driver-dependency">
+<h3>Add Driver Dependency</h3>
+<p>Next, download the code materials for this exercise on Frodo.
+<a class="reference external" href="https://ed.devmountain.com/materials/exercises/java-applesauce-db.zip">Click here to download</a>.</p>
+<p>The bulk of the code you already have is a single file called <cite>Applesauce.java</cite> and <cite>pom.xml</cite>.</p>
+<p><cite>Applesauce.java</cite> contains some boilerplate code to get you started on JDBC. We’ll revisit that
+in a moment. Now, we will be editing <cite>pom.xml</cite>, which is where we will store our project’s
+dependencies.</p>
+<p>Add the Postgres driver dependency to your <cite>pom.xml</cite> file. Look for the <code class="docutils literal notranslate"><span class="pre">&lt;dependencies&gt;</span></code>
+section. There is a comment indicating where to add this in the given <cite>pom.xml</cite>.</p>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="c">&lt;!-- https://mvnrepository.com/artifact/org.postgresql/postgresql --&gt;</span>
+<span class="nt">&lt;dependency&gt;</span>
+    <span class="nt">&lt;groupId&gt;</span>org.postgresql<span class="nt">&lt;/groupId&gt;</span>
+    <span class="nt">&lt;artifactId&gt;</span>postgresql<span class="nt">&lt;/artifactId&gt;</span>
+    <span class="nt">&lt;version&gt;</span>42.2.23<span class="nt">&lt;/version&gt;</span>
+<span class="nt">&lt;/dependency&gt;</span>
+</pre></div>
+</div>
+<p>Next, add the Maven Assembly plugin to your <cite>pom.xml</cite> file. Maven Assembly allows us to
+be able to package our Java code project, including the driver dependency, using Maven.
+Look for the <code class="docutils literal notranslate"><span class="pre">&lt;plugins&gt;</span></code> section. There is also a comment indicating where to add this in the
+given <cite>pom.xml</cite>.</p>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;plugin&gt;</span>
+  <span class="nt">&lt;artifactId&gt;</span>maven-assembly-plugin<span class="nt">&lt;/artifactId&gt;</span>
+  <span class="nt">&lt;executions&gt;</span>
+    <span class="nt">&lt;execution&gt;</span>
+      <span class="nt">&lt;phase&gt;</span>package<span class="nt">&lt;/phase&gt;</span>
+      <span class="nt">&lt;goals&gt;</span>
+        <span class="nt">&lt;goal&gt;</span>single<span class="nt">&lt;/goal&gt;</span>
+      <span class="nt">&lt;/goals&gt;</span>
+    <span class="nt">&lt;/execution&gt;</span>
+  <span class="nt">&lt;/executions&gt;</span>
+  <span class="nt">&lt;configuration&gt;</span>
+    <span class="nt">&lt;descriptorRefs&gt;</span>
+      <span class="nt">&lt;descriptorRef&gt;</span>jar-with-dependencies<span class="nt">&lt;/descriptorRef&gt;</span>
+    <span class="nt">&lt;/descriptorRefs&gt;</span>
+  <span class="nt">&lt;/configuration&gt;</span>
+<span class="nt">&lt;/plugin&gt;</span>
+</pre></div>
+</div>
+</section>
+<section class="section" id="update-postgres-connection-parameters">
+<h3>Update Postgres Connection Parameters</h3>
+<p>In order to run <cite>Applesauce.java</cite>, you’ll need to update a few things in the file. The
+second and third arguments to the <cite>getConnection</cite> method call within <cite>Applesauce.main</cite> needs
+to be <strong>your</strong> PostgreSQL username and password, respectively. If you do not know what
+these are, either read
+<a class="reference external" href="https://chartio.com/resources/tutorials/how-to-set-the-default-user-password-in-postgresql/" target="_blank">this article</a>
+and/or ask for help from a SME to <strong>before you move forward</strong>.</p>
+</section>
+</section>
+<section class="section" id="step-3-packaging-running-your-code-with-maven">
+<h2>Step 3: Packaging &amp; Running Your Code with Maven</h2>
+<p>Let’s go over the steps you’ll need to compile your code with the maven dependencies
+we added to the <cite>pom.xml</cite> file. There is already some interesting code in <cite>Applesauce.java</cite>
+that interacts with the database we created earlier. In this section, we’ll compile and
+package the project and run it with dependencies using Maven.</p>
+<section class="section" id="maven-clean">
+<h3>Maven Clean</h3>
+<p>Get in the habit of running <code class="docutils literal notranslate"><span class="pre">mvn</span> <span class="pre">clean</span></code> before you run your code in this exercise.
+Successful output for this command looks something like this (see below).</p>
+<pre class="console literal-block">$ <span class="cmd">mvn clean</span>
+[INFO] Scanning for projects...
+[INFO]
+... more output ...
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  0.080 s
+... more output ...</pre>
+</section>
+<section class="section" id="maven-package">
+<h3>Maven Package</h3>
+<p>Next, run <code class="docutils literal notranslate"><span class="pre">mvn</span> <span class="pre">package</span></code> to build your project with dependencies.
+Successful output for this command looks something like this (see below).</p>
+<pre class="console literal-block">$ <span class="cmd">mvn package</span>
+[INFO] Scanning for projects...
+... lots more output ...
+[INFO]
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------</pre>
+</section>
+<section class="section" id="check-out-what-happened">
+<h3>Check out what happened</h3>
+<p>In your project directory, there is a new directory called <cite>target</cite> and within that
+you’ll see two important new files– <cite>project-name-SNAPSHOT.jar</cite> as well as
+<cite>project-name-SNAPSHOT-jar-with-dependencies.jar</cite>. Normally, when you run <code class="docutils literal notranslate"><span class="pre">maven</span> <span class="pre">package</span></code>
+you’ll just get the one <cite>SNAPSHOT.jar</cite> file. But since we are using the Maven Assembly
+plugin, you also get the <cite>SNAPSHOT-jar-with-dependencies</cite> which the file we will use
+that will include the PostgreSQL Database Driver we asked for earlier in the <cite>pom.xml</cite>.</p>
+</section>
+<section class="section" id="run-the-code">
+<h3>Run The Code</h3>
+<pre class="console literal-block">$ <span class="cmd">java -cp target/applesaucedb-1.0-SNAPSHOT-jar-with-dependencies.jar src/main/java/com/devmountain/Applesauce.java</span>
+Got a connection using DataSource!
+Here is a list of all foods:
+spaghetti
+noodles
+beef tacos
+potatoes
+That's all, Folks!</pre>
+<p>🎉 Success!</p>
+<div class="admonition warning">
+<p class="admonition-title">If this didn’t work, ask for help</p>
+<div class="admonition-body docutils container">
+<p>You can only move forward in this exercise if you have successfully completed this build process.
+If the above command didn’t work, ask for help from a SME.</p>
+</div>
+</div>
+</section>
+</section>
+<section class="section" id="step-4-jdbc-code-review">
+<h2>Step 4: JDBC Code Review</h2>
+<p>Open the file <cite>Applesauce.java</cite> and review the code. Here is a summary of what’s happening
+in the <cite>main</cite> method.</p>
+<ul class="simple">
+<li><p>Get a <cite>Connection</cite> object using <cite>DataSource</cite></p></li>
+<li><p>Create a <cite>Statement</cite> object from the <cite>Connection</cite> object</p></li>
+<li><p>Execute a query from the <cite>Statement</cite>, optionally storing the results in a <cite>ResultSet</cite> object</p></li>
+<li><p>Loop through the <cite>ResultSet</cite> object to see the data</p></li>
+</ul>
+<div class="highlight-java notranslate"><div class="highlight"><pre><span></span><span class="kd">public</span> <span class="kd">class</span> <span class="nc">Applesauce</span> <span class="p">{</span>
+    <span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="p">(</span><span class="n">String</span><span class="o">[]</span> <span class="n">args</span><span class="p">)</span> <span class="p">{</span>
+
+        <span class="c1">// Using JDBC with Postgres Driver to query an already-existing database</span>
+
+        <span class="k">try</span> <span class="p">{</span>
+            <span class="n">Connection</span> <span class="n">connection</span> <span class="o">=</span> <span class="n">DriverManager</span><span class="p">.</span><span class="na">getConnection</span><span class="p">(</span>
+                    <span class="s">&quot;jdbc:postgresql://localhost:5432/applesaucedb&quot;</span><span class="p">,</span>
+                    <span class="s">&quot;YOUR_POSTGRES_USERNAME&quot;</span><span class="p">,</span>
+                    <span class="s">&quot;YOUR_POSTGRES_USER_PASSWORD&quot;</span><span class="p">);</span>
+
+            <span class="k">if</span> <span class="p">(</span><span class="n">connection</span><span class="p">.</span><span class="na">isValid</span><span class="p">(</span><span class="mi">500</span><span class="p">))</span> <span class="p">{</span>
+                <span class="n">System</span><span class="p">.</span><span class="na">out</span><span class="p">.</span><span class="na">println</span><span class="p">(</span><span class="s">&quot;Got a connection using DriverManager!&quot;</span><span class="p">);</span>
+
+                <span class="n">Statement</span> <span class="n">statement</span> <span class="o">=</span> <span class="n">connection</span><span class="p">.</span><span class="na">createStatement</span><span class="p">();</span>
+                <span class="n">ResultSet</span> <span class="n">resultSet</span> <span class="o">=</span> <span class="n">statement</span><span class="p">.</span><span class="na">executeQuery</span><span class="p">(</span><span class="s">&quot;SELECT * FROM foods&quot;</span><span class="p">);</span>
+                <span class="k">while</span> <span class="p">(</span><span class="n">resultSet</span><span class="p">.</span><span class="na">next</span><span class="p">())</span> <span class="p">{</span>
+                    <span class="n">System</span><span class="p">.</span><span class="na">out</span><span class="p">.</span><span class="na">println</span><span class="p">(</span><span class="n">resultSet</span><span class="p">.</span><span class="na">getString</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot; scores &quot;</span> <span class="o">+</span> <span class="n">resultSet</span><span class="p">.</span><span class="na">getString</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot;/10&quot;</span><span class="p">);</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+
+        <span class="p">}</span> <span class="k">catch</span> <span class="p">(</span><span class="n">Exception</span> <span class="n">e</span><span class="p">)</span> <span class="p">{</span>
+            <span class="n">System</span><span class="p">.</span><span class="na">out</span><span class="p">.</span><span class="na">println</span><span class="p">(</span><span class="s">&quot;Not able to connect &amp; execute because: &quot;</span> <span class="o">+</span> <span class="n">e</span><span class="p">.</span><span class="na">getMessage</span><span class="p">());</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+<section class="section" id="step-5-expand-functionality">
+<h2>Step 5: Expand Functionality</h2>
+<section class="section" id="visit-the-docs">
+<h3>Visit the Docs</h3>
+<p>The documentation for JDBC can be found <a class="reference external" href="https://docs.oracle.com/javase/8/docs/technotes/guides/jdbc/" target="_blank">here</a>.
+Refer to it as you build out your program.</p>
+</section>
+<section class="section" id="expand-jdbc-functionality">
+<h3>Expand JDBC functionality</h3>
+<ul class="simple">
+<li><p>Write another <cite>SELECT</cite> statement using a <cite>WHERE</cite> clause</p></li>
+<li><p>Try executing <cite>INSERT</cite>, <cite>DELETE</cite>, etc. using JDBC</p></li>
+<li><p>Use <cite>PreparedStatement</cite> instead of <cite>Statement</cite> class</p></li>
+<li><p>Difference is <cite>PreparedStatement</cite> can specify a more generic SQL statement that <em>later</em> receives parameters</p></li>
+</ul>
+</section>
+<section class="section" id="create-cli-program">
+<h3>Create CLI program</h3>
+<ul class="simple">
+<li><p>Read input for SQL command type (<cite>INSERT</cite> vs <cite>SELECT</cite>)</p></li>
+<li><p>Depending on command type:</p></li>
+<li><p>Read input for table name, table columns, and new values (<cite>INSERT</cite>)</p></li>
+<li><p>Read input for desired columns and table name (<cite>SELECT</cite>)</p></li>
+<li><p>Execute query</p></li>
+<li><p>Display a results page in terminal</p></li>
+</ul>
+</section>
+</section>
+<section class="section" id="further-study">
+<h2>Further Study</h2>
+<p>Try connecting this completed CLI program to the Heroku instance on the web</p>
+<p>You’ll need a different connection URL (because it’s not <cite>localhost</cite> and you may
+have used a different database locally than PostgreSQL on Heroku)</p>
+</section>
+</section>
+
+        </main>
+
+        <footer id="page-footer">
+            <p>&copy; 2022 Devmountain</p>
+        </footer>
+      </div>
+
+      <script src="_static/main.js"></script>
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+  </body>
+</html>
